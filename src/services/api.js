@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api/manga';
+const API_ROOT = import.meta.env.VITE_API_BASE_URL || 'https://animix-backend.onrender.com';
+const API_BASE_URL = `${API_ROOT}/api/manga`;
 
 export const getTrendingManga = async (page = 1, limit = 12) => {
   try {
@@ -74,7 +75,7 @@ export const getMangaChapters = async (id, page = 1, limit = 100) => {
 
 export const getChapterPages = async (chapterId) => {
   try {
-    const response = await axios.get(`/api/chapters/${chapterId}/pages`);
+    const response = await axios.get(`${API_ROOT}/api/chapters/${chapterId}/pages`);
     return response.data;
   } catch (error) {
     console.error('Error fetching chapter pages:', error);
@@ -84,7 +85,7 @@ export const getChapterPages = async (chapterId) => {
 
 // ============ ANIME API ============
 
-const ANIME_BASE_URL = '/api/anime';
+const ANIME_BASE_URL = `${API_ROOT}/api/anime`;
 
 export const getTopAnime = async (type = 'anime', filter = 'airing', page = 1, limit = 20) => {
   try {
