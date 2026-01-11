@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_ROOT = import.meta.env.VITE_API_BASE_URL || 'https://animix-backend.onrender.com';
+const API_ROOT = 'https://animix-backend.onrender.com'|| import.meta.env.VITE_API_BASE_URL  ;
 const API_BASE_URL = `${API_ROOT}/api/manga`;
 
 export const getTrendingManga = async (page = 1, limit = 12) => {
