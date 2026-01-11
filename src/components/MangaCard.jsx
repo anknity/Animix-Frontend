@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, Star, Users } from 'lucide-react';
 
+const API_ROOT = import.meta.env.VITE_API_BASE_URL || 'https://animix-backend.onrender.com';
+
+const proxyImage = (url) => {
+  if (!url || !url.includes('mangadex.org')) return url;
+  return `${API_ROOT}/api/proxy/image?url=${encodeURIComponent(url)}`;
+};
+
 const MangaCard = ({ manga }) => {
   const title = manga?.title?.english || manga?.title?.romaji || manga?.title?.native || 'Untitled';
-  const cover = manga?.cover || manga?.image || 'https://via.placeholder.com/300x420?text=No+Cover';
+  const coverUrl = manga?.cover || manga?.image || null;
+  const cover = coverUrl ? proxyImage(coverUrl) : 'https://via.placeholder.com/300x420?text=No+Cover';
   const follows = manga?.follows ?? manga?.ratingVotes ?? null;
   const rating = manga?.rating ? Number(manga.rating).toFixed(2) : null;
   const formattedFollows = follows ? Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(follows)) : null;
