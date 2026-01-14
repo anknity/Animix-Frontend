@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock, Flame, ListOrdered, PlayCircle, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock, Flame, ListOrdered, PlayCircle, Sparkles, Star, Zap, ExternalLink, Globe, Calendar, Sun } from 'lucide-react';
 import Loader from '../components/Loader';
-import { getTopAnime, getTrendingManga, getTopEpisodesOfWeek, getAnimeSchedule } from '../services/api';
+import { getTopAnime, getTrendingManga, getTopEpisodesOfWeek, getTopEpisodesToday, getAnimeSchedule } from '../services/api';
 
 const STATUS_STYLES = {
   RELEASING: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200',
@@ -47,6 +47,43 @@ const formatScheduleSlot = (entry) => {
   };
 };
 
+const TOP_SITES_DATA = {
+  anime: [
+    { name: 'AnimePahe', url: 'https://animepahe.si', description: 'Lightweight anime streaming', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21459-yeVkolGKdGUV.jpg' },
+    { name: 'HiAnime', url: 'https://hianime.to', description: 'High-quality anime streams', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/1-T3PJUjFJyRwg.jpg' },
+    { name: 'AniKai', url: 'https://anikai.to', description: 'Premium anime experience', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/101922-YfZhKBUDDS6L.jpg' },
+    { name: 'AniZone', url: 'https://anizone.to', description: 'Latest anime episodes', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/20958-Y7eQdz9VENBD.jpg' },
+    { name: 'Kuudere', url: 'https://kuudere.ru', description: 'Curated anime selection', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/16498-8jpFCOcDmneX.jpg' }
+  ],
+  donghua: [
+    { name: 'AnimeKhor', url: 'https://animekhor.org', description: 'Chinese anime hub', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/127720-lf01ya5ny8pG.jpg' },
+    { name: 'AnimeXin', url: 'https://animexin.dev', description: 'Latest donghua releases', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/108978-oHRSIl5LvLLZ.jpg' },
+    { name: 'LMAnime', url: 'https://lmanime.com', description: 'Donghua streaming platform', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/104454-ZqlcWraUJrDM.jpg' },
+    { name: 'Donghua Site', url: 'https://donghua.site', description: 'Dedicated donghua portal', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/140960-Z930LjGxlCYq.jpg' },
+    { name: 'AnimeCube', url: 'https://animecube.live', description: 'Multi-source donghua', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/113415-jQBSkxWAAk83.jpg' }
+  ],
+  manga: [
+    { name: 'Comix', url: 'https://comix.to', description: 'Fast manga reader', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/20-HHxhPj5JD13a.jpg' },
+    { name: 'MangaFire', url: 'https://mangafire.to', description: 'High-res manga scans', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/11757-TlEEV9weG4Ag.jpg' },
+    { name: 'Bato', url: 'https://bato.ing', description: 'Community-driven manga', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21519-1ayMXgNlmByb.jpg' },
+    { name: 'MangaBall', url: 'https://mangaball.net', description: 'Latest manga chapters', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/20912-1x5ehe55ferv.jpg' },
+    { name: 'MangaDex', url: 'https://mangadex.org', description: 'Open-source manga', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/5114-q0V5URebphSG.jpg' }
+  ],
+  manhwa: [
+    { name: 'Kagane', url: 'https://kagane.org', description: 'Premium manhwa reader', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/151807-37yfQA3ym8PA.jpg' },
+    { name: 'Project Suki', url: 'https://projectsuki.com', description: 'Korean webtoons', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/129874-g5FgnhRFnIIj.jpg' },
+    { name: 'QToon', url: 'https://qtoon.com', description: 'Quality manhwa scans', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/145064-S7qAgxf6kMrW.jpg' },
+    { name: 'WEBTOONS', url: 'https://webtoons.com', description: 'Official webtoon platform', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/113415-jQBSkxWAAk83.jpg' },
+    { name: 'ManhwaZ', url: 'https://manhwaz.com', description: 'Latest manhwa updates', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/141391-yJnCQwmb1pJF.jpg' }
+  ],
+  download: [
+    { name: 'AnimeTosho', url: 'https://animetosho.org', description: 'Torrent downloads', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21087-sHb9zUZFsHe1.jpg' },
+    { name: 'TokyoInsider', url: 'https://tokyoinsider.com', description: 'Direct downloads', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/11061-8WkkTZ6duKpq.jpg' },
+    { name: 'AV1Please', url: 'https://av1please.com', description: 'AV1 encoded anime', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/5114-q0V5URebphSG.jpg' },
+    { name: 'NekoBT', url: 'https://nekobt.to', description: 'Anime torrents', cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/20605-RCJ7M71zLmrh.jpg' }
+  ]
+};
+
 const HomePage = () => {
   const [trendingAnime, setTrendingAnime] = useState([]);
   const [trendingManga, setTrendingManga] = useState([]);
@@ -56,6 +93,9 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeScheduleDay, setActiveScheduleDay] = useState(null);
+  const [activeSiteCategory, setActiveSiteCategory] = useState('anime');
+  const [episodeFilter, setEpisodeFilter] = useState('week');
+  const [dailyEpisodes, setDailyEpisodes] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -92,34 +132,28 @@ const HomePage = () => {
   }, []);
 
   const heroSlides = useMemo(() => {
-    const animeSlides = (trendingAnime || []).slice(0, 4).map((anime, index) => ({
-      id: `anime-${anime.id}`,
-      title: anime.titleEnglish || anime.title,
-      subtitle: 'Trending Anime',
-      description: cleanCopy(anime.synopsis),
-      cover: anime.bannerImage || anime.coverImage,
-      badge: `#${index + 1}`,
-      rating: anime.score,
-      status: anime.status,
-      meta: anime.episodes ? `${anime.episodes} eps` : 'New drop',
-      link: `/anime?focus=${anime.id}`
-    }));
-
-    const mangaSlides = (trendingManga || []).slice(0, 2).map((manga, idx) => ({
-      id: `manga-${manga.id}`,
-      title: manga.title?.english || manga.title?.romaji || manga.title?.native || 'Untitled',
-      subtitle: 'Trending Manga',
-      description: cleanCopy(manga.description),
-      cover: manga.cover || manga.image,
-      badge: `#${animeSlides.length + idx + 1}`,
-      rating: manga.rating,
-      status: manga.status || 'NEW',
-      meta: manga.lastChapter ? `Ch. ${manga.lastChapter}` : 'Weekly drop',
-      link: `/manga/${manga.id}`
-    }));
-
-    return [...animeSlides, ...mangaSlides];
-  }, [trendingAnime, trendingManga]);
+    // Show 10 currently airing anime in the slider
+    return (trendingAnime || []).slice(0, 10).map((anime, index) => {
+      const totalEps = anime.episodes || '?';
+      const airedEps = anime.airedEpisodes || anime.episodesAired || (anime.nextAiringEpisode?.episode ? anime.nextAiringEpisode.episode - 1 : null);
+      const episodeInfo = airedEps ? `EP ${airedEps}/${totalEps}` : (totalEps !== '?' ? `${totalEps} eps` : 'Ongoing');
+      
+      return {
+        id: `anime-${anime.id}`,
+        title: anime.titleEnglish || anime.title,
+        subtitle: 'Currently Airing',
+        description: cleanCopy(anime.synopsis),
+        cover: anime.bannerImage || anime.coverImage,
+        badge: `#${index + 1}`,
+        rating: anime.score,
+        status: anime.status,
+        meta: episodeInfo,
+        airedEps: airedEps,
+        totalEps: totalEps,
+        link: `/anime?focus=${anime.id}`
+      };
+    });
+  }, [trendingAnime]);
 
   useEffect(() => {
     if (!heroSlides.length) return undefined;
@@ -137,6 +171,24 @@ const HomePage = () => {
   }, [trendingManga]);
 
   const weeklyEpisodeList = useMemo(() => (weeklyEpisodes || []).slice(0, 10), [weeklyEpisodes]);
+  const dailyEpisodeList = useMemo(() => (dailyEpisodes || []).slice(0, 10), [dailyEpisodes]);
+  
+  // Get active episode list based on filter
+  const activeEpisodeList = useMemo(() => {
+    return episodeFilter === 'today' ? dailyEpisodeList : weeklyEpisodeList;
+  }, [episodeFilter, dailyEpisodeList, weeklyEpisodeList]);
+
+  // Fetch daily episodes when filter changes
+  useEffect(() => {
+    if (episodeFilter === 'today' && dailyEpisodes.length === 0) {
+      getTopEpisodesToday().then((data) => {
+        setDailyEpisodes(data.results || []);
+      }).catch(() => {
+        // Fallback to weekly episodes if daily fails
+        setDailyEpisodes(weeklyEpisodes || []);
+      });
+    }
+  }, [episodeFilter, dailyEpisodes.length, weeklyEpisodes]);
 
   const upcomingSchedule = useMemo(() => {
     return [...(animeSchedule || [])].sort((a, b) => {
@@ -222,6 +274,26 @@ const HomePage = () => {
 
   const handlePrevDay = () => cycleScheduleDay(-1);
   const handleNextDay = () => cycleScheduleDay(1);
+
+  const siteCategories = [
+    { key: 'anime', label: 'Anime', icon: PlayCircle },
+    { key: 'donghua', label: 'Donghua', icon: Sparkles },
+    { key: 'manga', label: 'Manga', icon: Star },
+    { key: 'manhwa', label: 'Manhwa', icon: Flame },
+    { key: 'download', label: 'Downloads', icon: Globe }
+  ];
+
+  const activeSites = TOP_SITES_DATA[activeSiteCategory] || [];
+  const siteCategoryIndex = siteCategories.findIndex((cat) => cat.key === activeSiteCategory);
+
+  const cycleSiteCategory = (direction) => {
+    const safeIndex = siteCategoryIndex === -1 ? 0 : siteCategoryIndex;
+    const nextIndex = (safeIndex + direction + siteCategories.length) % siteCategories.length;
+    setActiveSiteCategory(siteCategories[nextIndex].key);
+  };
+
+  const handlePrevCategory = () => cycleSiteCategory(-1);
+  const handleNextCategory = () => cycleSiteCategory(1);
 
   const scheduleTimestamp = (() => {
     if (activeDayMeta?.entries?.length && activeDayMeta.entries[0]?.airingAt) {
@@ -362,45 +434,56 @@ const HomePage = () => {
             </Link>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-            {animeStrip.map((anime, index) => (
-              <Link
-                key={anime.id}
-                to={`/anime?focus=${anime.id}`}
-                className="relative inline-flex w-56 shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-black/80"
-              >
-                <div className="relative h-72 w-full overflow-hidden">
-                  {anime.coverImage && (
-                    <img
-                      src={anime.coverImage}
-                      alt={anime.titleEnglish || anime.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  )}
-                  <span className="absolute left-3 top-3 rounded-full border border-cyan-400/50 bg-black/60 px-3 py-1 text-xs font-bold text-cyan-100">
-                    #{index + 1}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 p-4">
-                  <p className="text-sm font-semibold text-white line-clamp-2">
-                    {anime.titleEnglish || anime.title}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span className="flex items-center gap-1">
-                      <Flame size={14} className="text-orange-400" />
-                      EP {anime.episodes || '?'}
+            {animeStrip.map((anime, index) => {
+              const airedEps = anime.airedEpisodes || anime.episodesAired || (anime.nextAiringEpisode?.episode ? anime.nextAiringEpisode.episode - 1 : null);
+              const totalEps = anime.episodes || '?';
+              const episodeDisplay = airedEps ? `EP ${airedEps}/${totalEps}` : `EP ${totalEps}`;
+              
+              return (
+                <Link
+                  key={anime.id}
+                  to={`/anime?focus=${anime.id}`}
+                  className="relative inline-flex w-56 shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-black/80"
+                >
+                  <div className="relative h-72 w-full overflow-hidden">
+                    {anime.coverImage && (
+                      <img
+                        src={anime.coverImage}
+                        alt={anime.titleEnglish || anime.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
+                    <span className="absolute left-3 top-3 rounded-full border border-cyan-400/50 bg-black/60 px-3 py-1 text-xs font-bold text-cyan-100">
+                      #{index + 1}
                     </span>
-                    <span className="flex items-center gap-1 text-amber-300">
-                      <Star size={13} />
-                      {formatRating(anime.score)}
-                    </span>
+                    {airedEps && (
+                      <span className="absolute right-3 top-3 rounded-full border border-emerald-400/50 bg-black/60 px-2 py-1 text-[10px] font-semibold text-emerald-200">
+                        {airedEps} aired
+                      </span>
+                    )}
                   </div>
-                  <div className={`glass-chip ${statusClass(anime.status)}`}>
-                    {anime.status?.replace(/_/g, ' ') || 'NEW'}
+                  <div className="flex flex-col gap-2 p-4">
+                    <p className="text-sm font-semibold text-white line-clamp-2">
+                      {anime.titleEnglish || anime.title}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-slate-300">
+                      <span className="flex items-center gap-1">
+                        <Flame size={14} className="text-orange-400" />
+                        {episodeDisplay}
+                      </span>
+                      <span className="flex items-center gap-1 text-amber-300">
+                        <Star size={13} />
+                        {formatRating(anime.score)}
+                      </span>
+                    </div>
+                    <div className={`glass-chip ${statusClass(anime.status)}`}>
+                      {anime.status?.replace(/_/g, ' ') || 'NEW'}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
 
@@ -471,47 +554,6 @@ const HomePage = () => {
           </div>
         </section>
 
-        {topMangaRatings.length > 0 && (
-          <section id="manga-rated" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                  <ListOrdered size={18} className="text-amber-200" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200">Manga ratings</p>
-                  <h2 className="text-2xl font-semibold text-white">Top scored stories</h2>
-                </div>
-              </div>
-              <span className="text-xs text-slate-400">Powered by MangaDex</span>
-            </div>
-            <div className="space-y-2">
-              {topMangaRatings.map((manga, index) => {
-                const title = manga.title?.english || manga.title?.romaji || manga.title?.native || 'Untitled';
-                return (
-                  <Link
-                    key={manga.id}
-                    to={`/manga/${manga.id}`}
-                    className="flex items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/80 px-4 py-3"
-                  >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 text-sm font-semibold text-amber-100">
-                      #{index + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{title}</p>
-                      <p className="text-xs text-slate-400 truncate">{manga.tags?.slice(0, 2).join(' · ') || 'Ongoing saga'}</p>
-                    </div>
-                    <div className="text-right text-xs text-slate-300">
-                      <p className="font-semibold text-white">IMDb {formatRating(manga.rating)}</p>
-                      <p>{manga.lastChapter ? `Ch. ${manga.lastChapter}` : 'Weekly drop'}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         {topEpisode && (
           <section id="anime-episode" className="relative overflow-hidden rounded-[32px] border border-purple-500/40 bg-gradient-to-br from-purple-900/40 via-slate-950 to-slate-950 p-[2px] shadow-[0_25px_80px_rgba(88,28,135,0.35)]">
             <div className="relative rounded-[30px] bg-black/60 p-6">
@@ -561,19 +603,48 @@ const HomePage = () => {
 
         {weeklyEpisodeList.length > 0 && (
           <section className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.4em] text-purple-200">Top 10 · Episodes</p>
-                <h2 className="text-2xl font-semibold text-white">IMDb fan heat this week</h2>
+                <h2 className="text-2xl font-semibold text-white">
+                  IMDb fan heat {episodeFilter === 'today' ? 'today' : 'this week'}
+                </h2>
               </div>
-              <span className="text-xs text-slate-400">Refreshed hourly</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEpisodeFilter('today')}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
+                    episodeFilter === 'today'
+                      ? 'border-purple-400/50 bg-purple-500/20 text-purple-100'
+                      : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
+                  }`}
+                >
+                  <Sun size={14} />
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEpisodeFilter('week')}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
+                    episodeFilter === 'week'
+                      ? 'border-purple-400/50 bg-purple-500/20 text-purple-100'
+                      : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
+                  }`}
+                >
+                  <Calendar size={14} />
+                  This Week
+                </button>
+              </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              {weeklyEpisodeList.map((episode, index) => {
+              {activeEpisodeList.map((episode, index) => {
                 const { day, time } = formatScheduleSlot(episode);
+                const airedEps = episode.airedEpisodes || episode.episodesAired || (episode.nextAiringEpisode?.episode ? episode.nextAiringEpisode.episode - 1 : null);
+                const totalEps = episode.episodes || '?';
                 return (
                   <Link
-                    key={`${episode.id}-${episode.episode}`}
+                    key={`${episode.id}-${episode.episode}-${episodeFilter}`}
                     to={`/anime?focus=${episode.id}`}
                     className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/60 p-[2px]"
                   >
@@ -598,7 +669,7 @@ const HomePage = () => {
                           <span className="flex h-8 w-8 items-center justify-center rounded-2xl border border-purple-400/50 bg-purple-500/20 text-sm text-purple-100">
                             #{index + 1}
                           </span>
-                          EP {episode.episode}
+                          EP {episode.episode}{airedEps ? `/${totalEps}` : ''}
                         </span>
                         <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-3 py-1">
                           <Star size={13} className="text-amber-300" />
@@ -625,6 +696,12 @@ const HomePage = () => {
                         <span className="glass-chip border-white/20 bg-white/5 text-white">
                           Airing {day}
                         </span>
+                        {airedEps && (
+                          <span className="glass-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-100">
+                            <PlayCircle size={12} />
+                            {airedEps} aired
+                          </span>
+                        )}
                       </div>
                     </div>
                   </Link>
@@ -750,6 +827,177 @@ const HomePage = () => {
                   <ArrowRight size={12} />
                 </Link>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* Top Sites Section */}
+        <section id="top-sites" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                <Globe size={18} className="text-purple-200" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.4em] text-purple-200">Top Sites</p>
+                <h2 className="text-2xl font-semibold text-white">Community favorites</h2>
+              </div>
+            </div>
+            <span className="text-xs text-slate-400">Curated collection</span>
+          </div>
+
+          <div className="rounded-[32px] border border-white/10 bg-slate-950/80 shadow-[0_20px_60px_rgba(2,8,23,0.6)] overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 bg-slate-900/70 px-4 py-4">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <button
+                  type="button"
+                  onClick={handlePrevCategory}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white"
+                  aria-label="Previous category"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <div className="flex items-center gap-2">
+                  {siteCategories.map((category) => {
+                    const isActive = activeSiteCategory === category.key;
+                    const Icon = category.icon;
+                    return (
+                      <button
+                        type="button"
+                        key={category.key}
+                        onClick={() => setActiveSiteCategory(category.key)}
+                        className={`flex min-w-[100px] items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-all ${
+                          isActive
+                            ? 'bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-lg shadow-purple-400/30 border-transparent'
+                            : 'border-white/10 text-slate-200 bg-white/5'
+                        }`}
+                      >
+                        <Icon size={14} />
+                        <span>{category.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNextCategory}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white"
+                  aria-label="Next category"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+              <div className="text-right text-xs text-slate-300">
+                <p className="font-semibold">{siteCategories.find(cat => cat.key === activeSiteCategory)?.label || 'Sites'}</p>
+                <p>{activeSites.length} recommended sites</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 p-6 md:grid-cols-2">
+              {activeSites.map((site, index) => (
+                <a
+                  key={site.url}
+                  href={site.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/60 p-[2px] transition hover:border-purple-400/50"
+                >
+                  <div className="relative flex h-full min-h-[140px] flex-col justify-end gap-3 rounded-[24px] overflow-hidden">
+                    {/* Background Image */}
+                    {site.cover && (
+                      <>
+                        <div className="absolute inset-0">
+                          <img
+                            src={site.cover}
+                            alt={site.name}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                        </div>
+                        <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <div className="absolute -inset-10 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.4),_transparent_60%)] blur-2xl" />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Content */}
+                    <div className="relative p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-2xl border border-purple-400/50 bg-black/60 backdrop-blur-sm text-sm font-bold text-purple-100">
+                          #{index + 1}
+                        </span>
+                        <span className="flex items-center gap-1 rounded-full border border-white/30 bg-black/50 backdrop-blur-sm px-3 py-1 text-xs text-white transition group-hover:border-purple-400/60 group-hover:bg-purple-500/30">
+                          <ExternalLink size={12} />
+                          Visit
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-lg font-bold text-white drop-shadow-lg">{site.name}</p>
+                        <p className="text-xs text-slate-200/90">{site.description}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-3">
+                        <span className="glass-chip border-purple-400/40 bg-black/50 backdrop-blur-sm text-purple-100">
+                          <Globe size={12} />
+                          {site.url.replace('https://', '').split('/')[0]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-white/5 bg-black/40 px-6 py-3 text-xs text-slate-400">
+              <p>External links · Use at your own discretion</p>
+              <span className="inline-flex items-center gap-1 font-semibold text-purple-300">
+                <Star size={12} />
+                Verified
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Manga Ratings Section - Moved to end */}
+        {topMangaRatings.length > 0 && (
+          <section id="manga-rated" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                  <ListOrdered size={18} className="text-amber-200" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200">Manga ratings</p>
+                  <h2 className="text-2xl font-semibold text-white">Top scored stories</h2>
+                </div>
+              </div>
+              <span className="text-xs text-slate-400">Powered by MangaDex</span>
+            </div>
+            <div className="space-y-2">
+              {topMangaRatings.map((manga, index) => {
+                const title = manga.title?.english || manga.title?.romaji || manga.title?.native || 'Untitled';
+                return (
+                  <Link
+                    key={manga.id}
+                    to={`/manga/${manga.id}`}
+                    className="flex items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/80 px-4 py-3 transition hover:border-amber-400/30 hover:bg-slate-900"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 text-sm font-semibold text-amber-100">
+                      #{index + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{title}</p>
+                      <p className="text-xs text-slate-400 truncate">{manga.tags?.slice(0, 2).join(' · ') || 'Ongoing saga'}</p>
+                    </div>
+                    <div className="text-right text-xs text-slate-300">
+                      <p className="font-semibold text-white">IMDb {formatRating(manga.rating)}</p>
+                      <p>{manga.lastChapter ? `Ch. ${manga.lastChapter}` : 'Weekly drop'}</p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

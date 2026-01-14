@@ -195,3 +195,50 @@ export const getTopEpisodesOfWeek = async () => {
     throw error;
   }
 };
+
+// Get top episodes of today
+export const getTopEpisodesToday = async () => {
+  try {
+    const response = await axios.get(`${ANIME_BASE_URL}/episodes/daily-top`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top episodes today:', error);
+    // Fallback to weekly if daily endpoint doesn't exist
+    return getTopEpisodesOfWeek();
+  }
+};
+
+// ============ GLOBAL SEARCH API ============
+
+export const globalSearch = async (query, page = 1, limit = 20) => {
+  try {
+    // Search both anime and manga in parallel
+    const [animeResponse, mangaResponse] = await Promise.all([
+      axios.get(`${ANIME_BASE_URL}/search`, {
+        params: { q: query, page, limit }
+      }).catch(() => ({ data: { results: [] } })),
+      axios.get(`${API_BASE_URL}/search`, {
+        params: { query, page, limit }
+      }).catch(() => ({ data: { results: [] } }))
+    ]);
+
+    const animeResults = (animeResponse.data.results || []).map(item => ({
+      ...item,
+      contentType: 'anime'
+    }));
+
+    const mangaResults = (mangaResponse.data.results || []).map(item => ({
+      ...item,
+      contentType: 'manga'
+    }));
+
+    return {
+      anime: animeResults,
+      manga: mangaResults,
+      all: [...animeResults, ...mangaResults]
+    };
+  } catch (error) {
+    console.error('Error in global search:', error);
+    throw error;
+  }
+};
